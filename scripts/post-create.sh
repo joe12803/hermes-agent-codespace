@@ -1,6 +1,7 @@
 #!/bin/bash
+export PATH="/opt/hermes/.venv/bin:$PATH"
 
-# Install cloudflared binary directly (no sudo needed)
+# Install cloudflared binary directly
 echo "Installing cloudflared..."
 curl -L https://github.com/cloudflare/cloudflared/releases/latest/download/cloudflared-linux-amd64 -o /opt/hermes/.venv/bin/cloudflared
 chmod +x /opt/hermes/.venv/bin/cloudflared
@@ -18,20 +19,28 @@ FEISHU_APP_ID=cli_a936f831e0389bc0
 FEISHU_APP_SECRET=05o9tqccFrNsPQ5EtnlaL3aphGNVCzPF
 ENVEOF
 
-# Add auto-URL print to bashrc
+# Add helper to bashrc
 cat << 'BASHRC' >> /home/hermes/.bashrc
 
-# Auto-print Cloudflare Tunnel URL when opening terminal
-if [ -f /opt/data/logs/cloudflared.log ]; then
-    sleep 2 # 给点时间让隧道分配 URL
-    URL=$(grep -oE "https://[a-zA-Z0-9-]+\.trycloudflare\.com" /opt/data/logs/cloudflared.log | tail -1)
-    if [ -n "$URL" ]; then
-        echo -e "\n======================================================="
-        echo -e "🚀 Hermes Agent WebUI 已经启动并穿透外网！"
-        echo -e "🌐 你的专属访问链接: \e[1;32m$URL\e[0m"
-        echo -e "=======================================================\n"
-    fi
-fi
-BASHRC
+alias logs="tail -f /opt/data/logs/dashboard.log"
+alias cflogs="tail -f /opt/data/logs/cloudflared.log"
 
-echo "Custom configurations and auto-tunnel injected!"
+function webui() {
+    echo "正在获取 Cloudflare Tunnel 链接..."
+    for i in {1..10}; do
+        URL=$(grep -oE "https://[a-zA-Z0-9-]+\.trycloudflare\.com" /opt/data/logs/cloudflared.log 2>/dev/null | tail -1)
+        if [ -n "$URL" ]; then
+            echo -e "\n======================================================="
+            echo -e "🚀 Hermes Agent WebUI 穿透成功！"
+            echo -e "🌐 点击访问: \e[1;32m$URL\e[0m"
+            echo -e "=======================================================\n"
+            return 0
+        fi
+        sleep 1
+    done
+    echo "仍在生成中，请稍后输入 'webui' 命令再次查看。"
+}
+
+# 自动在后台获取 URL
+webui &
+BASHRC
