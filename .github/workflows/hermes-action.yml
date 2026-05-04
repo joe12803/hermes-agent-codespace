@@ -76,4 +76,4 @@ jobs:
           echo "正在前台启动 Hermes Gateway..."
           echo "GitHub Actions 会让此任务最多存活 6 个小时。"
           # 启动飞书等网关服务，此命令会阻塞以保持 Action 一直运行
-          hermes gateway start --debug || sleep 21600
+          hermes gateway start || sleep 21600
