@@ -10,7 +10,7 @@ chmod +x /opt/hermes/.venv/bin/cloudflared
 cat << 'ENVEOF' >> /opt/data/.env
 
 # Custom API Configuration
-OPENAI_API_BASE=https://openclaw.994938.xyz/v1
+OPENAI_BASE_URL=https://openclaw.994938.xyz/v1
 OPENAI_API_KEY=sk-KhbSk9pyLHkw8AzPy
 LLM_MODEL=openai/gemini-3-flash
 

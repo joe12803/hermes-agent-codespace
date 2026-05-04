@@ -25,7 +25,7 @@ jobs:
         run: |
           mkdir -p /tmp/data
           cat << 'ENVEOF' > /tmp/data/.env
-          OPENAI_API_BASE=https://openclaw.994938.xyz/v1
+          OPENAI_BASE_URL=https://openclaw.994938.xyz/v1
           OPENAI_API_KEY=sk-KhbSk9pyLHkw8AzPy
           LLM_MODEL=openai/gemini-3-flash
           FEISHU_APP_ID=cli_a936f831e0389bc0
