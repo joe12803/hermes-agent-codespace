@@ -25,6 +25,11 @@ jobs:
         run: |
           mkdir -p /tmp/data
           cat << 'ENVEOF' > /tmp/data/.env
+          cat << 'CONFEOF' > /tmp/data/config.yaml
+model:
+  provider: custom
+  default: openai/gemini-3-flash
+CONFEOF
           OPENAI_BASE_URL=https://openclaw.994938.xyz/v1
           OPENAI_API_KEY=sk-KhbSk9pyLHkw8AzPy
           LLM_MODEL=openai/gemini-3-flash
@@ -35,6 +40,11 @@ jobs:
           TELEGRAM_HOME_CHANNEL=5145338625
           TELEGRAM_HOME_CHANNEL_NAME=Admin
           ENVEOF
+          cat << 'CONFEOF' > /tmp/data/config.yaml
+model:
+  provider: custom
+  default: openai/gemini-3-flash
+CONFEOF
 
       - name: Install Cloudflared Tunnel
         run: |
