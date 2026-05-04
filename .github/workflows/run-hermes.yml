@@ -1,6 +1,9 @@
-name: Run Hermes Agent & WebUI
+name: Run Hermes Agent
 
 on:
+  push:
+    branches:
+      - main
   workflow_dispatch:
 
 jobs:
@@ -10,29 +13,29 @@ jobs:
       - name: Clone Hermes Agent Repository
         run: git clone --depth 1 https://github.com/NousResearch/hermes-agent.git /tmp/hermes
 
-      - name: Install uv (Python Package Manager)
+      - name: Install uv
         uses: astral-sh/setup-uv@v5
         with:
           python-version: "3.11"
 
-      - name: Install Hermes Dependencies
+      - name: Install Hermes
         working-directory: /tmp/hermes
         run: |
           uv venv .venv
           uv pip install -e ".[all]"
 
-      - name: Configure API and Feishu Environment
+      - name: Configure Hermes
         run: |
           mkdir -p /tmp/data
           
-          # 1. 写入配置文件，强制使用自定义模型和覆盖默认模型
+          # Force custom provider
           cat << 'CONFEOF' > /tmp/data/config.yaml
 model:
   provider: custom
   default: openai/gemini-3-flash
 CONFEOF
 
-          # 2. 写入所有的环境变量
+          # Env vars
           cat << 'ENVEOF' > /tmp/data/.env
 OPENAI_BASE_URL=https://openclaw.994938.xyz/v1
 OPENAI_API_KEY=sk-KhbSk9pyLHkw8AzPy
@@ -45,12 +48,12 @@ TELEGRAM_HOME_CHANNEL=5145338625
 TELEGRAM_HOME_CHANNEL_NAME=Admin
 ENVEOF
 
-      - name: Install Cloudflared Tunnel
+      - name: Install Cloudflared
         run: |
           curl -L https://github.com/cloudflare/cloudflared/releases/latest/download/cloudflared-linux-amd64 -o /usr/local/bin/cloudflared
           chmod +x /usr/local/bin/cloudflared
 
-      - name: Start WebUI & Expose Tunnel URL
+      - name: Start Dashboard & Tunnel
         working-directory: /tmp/hermes
         run: |
           export PATH="/tmp/hermes/.venv/bin:$PATH"
@@ -72,16 +75,14 @@ ENVEOF
             sleep 2
           done
 
-      - name: Start Gateway (Keep Action Alive)
+      - name: Start Gateway
         working-directory: /tmp/hermes
         run: |
           export PATH="/tmp/hermes/.venv/bin:$PATH"
           export HERMES_HOME=/tmp/data
           
-          echo "正在安装网关扩展包..."
           hermes gateway install || true
           
-          echo "正在前台启动 Hermes Gateway 并输出日志..."
           export LOG_LEVEL=DEBUG
           nohup hermes gateway start > gateway.log 2>&1 &
           tail -f gateway.log || sleep 21600
