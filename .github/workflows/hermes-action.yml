@@ -1,7 +1,7 @@
 name: Run Hermes Agent & WebUI
 
 on:
-  workflow_dispatch: # 允许在网页上点击按钮手动触发
+  workflow_dispatch:
 
 jobs:
   run-agent:
@@ -24,27 +24,26 @@ jobs:
       - name: Configure API and Feishu Environment
         run: |
           mkdir -p /tmp/data
+          
+          # 1. 写入配置文件，强制使用自定义模型和覆盖默认模型
+          cat << 'CONFEOF' > /tmp/data/config.yaml
+model:
+  provider: custom
+  default: openai/gemini-3-flash
+CONFEOF
+
+          # 2. 写入所有的环境变量
           cat << 'ENVEOF' > /tmp/data/.env
-          cat << 'CONFEOF' > /tmp/data/config.yaml
-model:
-  provider: custom
-  default: openai/gemini-3-flash
-CONFEOF
-          OPENAI_BASE_URL=https://openclaw.994938.xyz/v1
-          OPENAI_API_KEY=sk-KhbSk9pyLHkw8AzPy
-          LLM_MODEL=openai/gemini-3-flash
-          FEISHU_APP_ID=cli_a936f831e0389bc0
-          FEISHU_APP_SECRET=05o9tqccFrNsPQ5EtnlaL3aphGNVCzPF
-          TELEGRAM_BOT_TOKEN=8663293275:AAHOsfeSCs38BxbCxpJjQOVO_MHXqSQtJiU
-          TELEGRAM_ALLOWED_USERS=5145338625
-          TELEGRAM_HOME_CHANNEL=5145338625
-          TELEGRAM_HOME_CHANNEL_NAME=Admin
-          ENVEOF
-          cat << 'CONFEOF' > /tmp/data/config.yaml
-model:
-  provider: custom
-  default: openai/gemini-3-flash
-CONFEOF
+OPENAI_BASE_URL=https://openclaw.994938.xyz/v1
+OPENAI_API_KEY=sk-KhbSk9pyLHkw8AzPy
+LLM_MODEL=openai/gemini-3-flash
+FEISHU_APP_ID=cli_a936f831e0389bc0
+FEISHU_APP_SECRET=05o9tqccFrNsPQ5EtnlaL3aphGNVCzPF
+TELEGRAM_BOT_TOKEN=8663293275:AAHOsfeSCs38BxbCxpJjQOVO_MHXqSQtJiU
+TELEGRAM_ALLOWED_USERS=5145338625
+TELEGRAM_HOME_CHANNEL=5145338625
+TELEGRAM_HOME_CHANNEL_NAME=Admin
+ENVEOF
 
       - name: Install Cloudflared Tunnel
         run: |
@@ -57,13 +56,9 @@ CONFEOF
           export PATH="/tmp/hermes/.venv/bin:$PATH"
           export HERMES_HOME=/tmp/data
           
-          # 在后台启动 WebUI
           nohup hermes dashboard --host 0.0.0.0 --port 9119 --insecure > dashboard.log 2>&1 &
-          
-          # 在后台启动内网穿透
           nohup cloudflared tunnel --url http://127.0.0.1:9119 > cloudflared.log 2>&1 &
           
-          # 轮询获取外网链接并打印到 GitHub Action 日志中
           echo "Waiting for Cloudflare Tunnel URL..."
           for i in {1..20}; do
             URL=$(grep -oE "https://[a-zA-Z0-9-]+\.trycloudflare\.com" cloudflared.log | tail -1)
@@ -83,12 +78,10 @@ CONFEOF
           export PATH="/tmp/hermes/.venv/bin:$PATH"
           export HERMES_HOME=/tmp/data
           
-          echo "正在前台启动 Hermes Gateway..."
-          echo "GitHub Actions 会让此任务最多存活 6 个小时。"
-          # 启动飞书等网关服务，此命令会阻塞以保持 Action 一直运行
+          echo "正在安装网关扩展包..."
           hermes gateway install || true
+          
+          echo "正在前台启动 Hermes Gateway 并输出日志..."
           export LOG_LEVEL=DEBUG
-          export DEBUG=1
           nohup hermes gateway start > gateway.log 2>&1 &
-          echo "Tailing gateway logs..."
           tail -f gateway.log || sleep 21600
