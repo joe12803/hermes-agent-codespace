@@ -1,6 +1,9 @@
 name: Run Hermes Agent
 
 on:
+  push:
+    branches:
+      - main
   workflow_dispatch:
 
 jobs:
