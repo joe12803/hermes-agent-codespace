@@ -1,0 +1,75 @@
+name: Run Hermes Agent & WebUI
+
+on:
+  workflow_dispatch: # 允许在网页上点击按钮手动触发
+
+jobs:
+  run-agent:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Clone Hermes Agent Repository
+        run: git clone --depth 1 https://github.com/NousResearch/hermes-agent.git /tmp/hermes
+
+      - name: Install uv (Python Package Manager)
+        uses: astral-sh/setup-uv@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install Hermes Dependencies
+        working-directory: /tmp/hermes
+        run: |
+          uv venv .venv
+          uv pip install -e ".[all]"
+
+      - name: Configure API and Feishu Environment
+        run: |
+          mkdir -p /tmp/data
+          cat << 'ENVEOF' > /tmp/data/.env
+          OPENAI_API_BASE=https://openclaw.994938.xyz/v1
+          OPENAI_API_KEY=sk-KhbSk9pyLHkw8AzPy
+          LLM_MODEL=openai/gemini-3-flash
+          FEISHU_APP_ID=cli_a936f831e0389bc0
+          FEISHU_APP_SECRET=05o9tqccFrNsPQ5EtnlaL3aphGNVCzPF
+          ENVEOF
+
+      - name: Install Cloudflared Tunnel
+        run: |
+          curl -L https://github.com/cloudflare/cloudflared/releases/latest/download/cloudflared-linux-amd64 -o /usr/local/bin/cloudflared
+          chmod +x /usr/local/bin/cloudflared
+
+      - name: Start WebUI & Expose Tunnel URL
+        working-directory: /tmp/hermes
+        run: |
+          export PATH="/tmp/hermes/.venv/bin:$PATH"
+          export HERMES_HOME=/tmp/data
+          
+          # 在后台启动 WebUI
+          nohup hermes dashboard --host 0.0.0.0 --port 9119 --insecure > dashboard.log 2>&1 &
+          
+          # 在后台启动内网穿透
+          nohup cloudflared tunnel --url http://127.0.0.1:9119 > cloudflared.log 2>&1 &
+          
+          # 轮询获取外网链接并打印到 GitHub Action 日志中
+          echo "Waiting for Cloudflare Tunnel URL..."
+          for i in {1..20}; do
+            URL=$(grep -oE "https://[a-zA-Z0-9-]+\.trycloudflare\.com" cloudflared.log | tail -1)
+            if [ -n "$URL" ]; then
+              echo "======================================================="
+              echo "🚀 Hermes Agent WebUI is Live!"
+              echo "🌐 点击此链接访问: $URL"
+              echo "======================================================="
+              break
+            fi
+            sleep 2
+          done
+
+      - name: Start Gateway (Keep Action Alive)
+        working-directory: /tmp/hermes
+        run: |
+          export PATH="/tmp/hermes/.venv/bin:$PATH"
+          export HERMES_HOME=/tmp/data
+          
+          echo "正在前台启动 Hermes Gateway..."
+          echo "GitHub Actions 会让此任务最多存活 6 个小时。"
+          # 启动飞书等网关服务，此命令会阻塞以保持 Action 一直运行
+          hermes gateway start || sleep 21600
