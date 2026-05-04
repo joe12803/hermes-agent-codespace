@@ -10,11 +10,8 @@ jobs:
   run-agent:
     runs-on: ubuntu-latest
     steps:
-      - name: Debug Info
-        run: |
-          echo "Starting workflow..."
-          pwd
-          whoami
+      - name: Checkout Repository
+        uses: actions/checkout@v4
 
       - name: Clone Hermes Agent Repository
         run: git clone --depth 1 https://github.com/NousResearch/hermes-agent.git /tmp/hermes
