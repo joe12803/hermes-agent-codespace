@@ -47,10 +47,11 @@ ENVEOF
 
       - name: Install Cloudflared
         run: |
-          curl -L https://github.com/cloudflare/cloudflared/releases/latest/download/cloudflared-linux-amd64 -o /usr/local/bin/cloudflared
-          chmod +x /usr/local/bin/cloudflared
+          curl -L https://github.com/cloudflare/cloudflared/releases/latest/download/cloudflared-linux-amd64 -o /tmp/cloudflared
+          chmod +x /tmp/cloudflared
+          sudo mv /tmp/cloudflared /usr/local/bin/cloudflared
 
-      - name: Start Dashboard & Tunnel
+      - name: Start Dashboard, Tunnel and Gateway
         working-directory: /tmp/hermes
         run: |
           export PATH="/tmp/hermes/.venv/bin:$PATH"
@@ -71,15 +72,7 @@ ENVEOF
             fi
             sleep 2
           done
-
-      - name: Start Gateway
-        working-directory: /tmp/hermes
-        run: |
-          export PATH="/tmp/hermes/.venv/bin:$PATH"
-          export HERMES_HOME=/tmp/data
           
           hermes gateway install || true
-          
           export LOG_LEVEL=DEBUG
-          nohup hermes gateway start > gateway.log 2>&1 &
-          tail -f gateway.log || sleep 21600
+          hermes gateway start 
