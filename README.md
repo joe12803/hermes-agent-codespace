@@ -56,3 +56,13 @@ hermes
 
 ---
 *Built with [Claude Code](https://claude.com/claude-code).*
+
+### 🤖 自动化后台运行 (GitHub Actions)
+不想开着浏览器跑 Codespace？你可以利用 GitHub Actions 让 Hermes 纯后台运行！
+
+1. 进入仓库的 **Actions** 标签页。
+2. 在左侧边栏点击 **Run Hermes Agent & WebUI**。
+3. 点击右侧的 **Run workflow** 按钮启动任务。
+4. 点进运行中的任务日志中（展开 `Start WebUI & Expose Tunnel URL` 步骤），系统会打印出为你分配的 `trycloudflare.com` 外网链接，点击即可访问 WebUI。
+
+*注意：按照 GitHub 的规则，Action 单次运行最多持续 6 个小时（6小时后自动断开，重开即可）。*
