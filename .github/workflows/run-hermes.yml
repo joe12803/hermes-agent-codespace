@@ -10,6 +10,12 @@ jobs:
   run-agent:
     runs-on: ubuntu-latest
     steps:
+      - name: Debug Info
+        run: |
+          echo "Starting workflow..."
+          pwd
+          whoami
+
       - name: Clone Hermes Agent Repository
         run: git clone --depth 1 https://github.com/NousResearch/hermes-agent.git /tmp/hermes
 
@@ -78,4 +84,5 @@ ENVEOF
           
           hermes gateway install || true
           export LOG_LEVEL=DEBUG
-          hermes gateway start 
+          nohup hermes gateway start > gateway.log 2>&1 &
+          tail -f gateway.log
